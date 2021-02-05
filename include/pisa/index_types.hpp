@@ -21,6 +21,12 @@
 #include "sequence/positive_sequence.hpp"
 #include "sequence/uniform_partitioned_sequence.hpp"
 
+//opt_vb
+#include "opt_vb/block_codecs_opt_vb.hpp"
+#include "opt_vb/freq_index_opt_vb.hpp"
+#include "opt_vb/partitioned_vb_sequence_opt_vb.hpp"
+#include "opt_vb/positive_sequence_opt_vb.hpp"
+
 namespace pisa {
 using ef_index = freq_index<compact_elias_fano, positive_sequence<strict_elias_fano>>;
 
@@ -43,12 +49,20 @@ using block_simple8b_index = block_freq_index<pisa::simple8b_block>;
 using block_simple16_index = block_freq_index<pisa::simple16_block>;
 using block_simdbp_index = block_freq_index<pisa::simdbp_block>;
 
+using opt_vb_index =
+    freq_index_opt_vb<
+        pvb::partitioned_vb_sequence_opt_vb<pvb::maskedvbyte_block_opt_vb>,
+        pvb::positive_sequence_opt_vb<
+            pvb::partitioned_vb_sequence_opt_vb<pvb::maskedvbyte_block_opt_vb>
+        >
+    >;
+
 }  // namespace pisa
 
 #define PISA_INDEX_TYPES                                                                    \
     (ef)(single)(pefuniform)(pefopt)(block_optpfor)(block_varintg8iu)(block_streamvbyte)(   \
         block_maskedvbyte)(block_interpolative)(block_qmx)(block_varintgb)(block_simple8b)( \
-        block_simple16)(block_simdbp)
+        block_simple16)(block_simdbp)(opt_vb)
 #define PISA_BLOCK_INDEX_TYPES                                                                    \
     (block_optpfor)(block_varintg8iu)(block_streamvbyte)(block_maskedvbyte)(block_interpolative)( \
         block_qmx)(block_varintgb)(block_simple8b)(block_simple16)(block_simdbp)

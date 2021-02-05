@@ -10,6 +10,9 @@
 #include "memory_source.hpp"
 #include "temporary_directory.hpp"
 
+#include "configuration.hpp"//#include "opt_vb/configuration_opt_vb.hpp"
+#include "opt_vb/global_parameters_opt_vb.hpp"
+
 namespace pisa {
 
 struct BlockIndexTag;
@@ -26,7 +29,8 @@ class block_freq_index {
 
     class builder {
       public:
-        builder(uint64_t num_docs, global_parameters const& params) : m_params(params)
+        builder(uint64_t num_docs, global_parameters const& params, 
+        pvb::global_parameters_opt_vb const& params_opt_vb) : m_params(params)
         {
             m_num_docs = num_docs;
             m_endpoints.push_back(0);
@@ -37,7 +41,7 @@ class block_freq_index {
             uint64_t n,
             DocsIterator docs_begin,
             FreqsIterator freqs_begin,
-            uint64_t /* occurrences */)
+            uint64_t /* occurrences */)//pvb::configuration_opt_vb const& conf)
         {
             if (!n) {
                 throw std::invalid_argument("List must be nonempty");

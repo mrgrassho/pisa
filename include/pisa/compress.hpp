@@ -129,12 +129,15 @@ template <typename CollectionType, typename WandType>
 void compress_index(
     binary_freq_collection const& input,
     pisa::global_parameters const& params,
+    pvb::global_parameters_opt_vb params_opt_vb,
     const std::optional<std::string>& output_filename,
     bool check,
     std::string const& seq_type,
     std::optional<std::string> const& wand_data_filename,
     ScorerParams const& scorer_params,
-    bool quantized)
+    bool quantized,
+    std::string const& index_encoding
+    )
 {
     if constexpr (std::is_same_v<typename CollectionType::index_layout_tag, BlockIndexTag>) {
         std::optional<QuantizedScorer<WandType>> quantized_scorer{};
@@ -163,7 +166,11 @@ void compress_index(
     spdlog::info("Processing {} documents", input.num_docs());
     double tick = get_time_usecs();
 
-    typename CollectionType::builder builder(input.num_docs(), params);
+    //uint64_t F = 64;
+    //pvb::configuration_opt_vb const& conf_opt_vb(F);
+    params_opt_vb.log_partition_size = configuration::get().log_partition_size;//params_opt_vb.log_partition_size = conf_opt_vb.log_partition_size;
+    typename CollectionType::builder builder(input.num_docs(),params,params_opt_vb);
+    
     size_t postings = 0;
     {
         pisa::progress progress("Create index", input.size());
@@ -198,11 +205,11 @@ void compress_index(
                 assert(quants.size() == size);
                 uint64_t quants_sum =
                     std::accumulate(quants.begin(), quants.begin() + quants.size(), uint64_t(0));
-                builder.add_posting_list(size, plist.docs.begin(), quants.begin(), quants_sum);
+                builder.add_posting_list(size, plist.docs.begin(), quants.begin(), quants_sum);//conf_opt_vb);
             } else {
                 uint64_t freqs_sum =
                     std::accumulate(plist.freqs.begin(), plist.freqs.begin() + size, uint64_t(0));
-                builder.add_posting_list(size, plist.docs.begin(), plist.freqs.begin(), freqs_sum);
+                builder.add_posting_list(size, plist.docs.begin(), plist.freqs.begin(), freqs_sum);//conf_opt_vb);
             }
 
             progress.update(1);
@@ -245,6 +252,7 @@ void compress(
 {
     binary_freq_collection input(input_basename.c_str());
     global_parameters params;
+    pvb::global_parameters_opt_vb params_opt_vb;
 
     if (false) {
 #define LOOP_BODY(R, DATA, T)                                                    \
@@ -254,12 +262,14 @@ void compress(
         compress_index<pisa::BOOST_PP_CAT(T, _index), wand_data<wand_data_raw>>( \
             input,                                                               \
             params,                                                              \
+            params_opt_vb,                                                       \
             output_filename,                                                     \
             check,                                                               \
             index_encoding,                                                      \
             wand_data_filename,                                                  \
             scorer_params,                                                       \
-            quantize);                                                           \
+            quantize,                                                            \
+            index_encoding);                                                     \
         /**/
         BOOST_PP_SEQ_FOR_EACH(LOOP_BODY, _, PISA_INDEX_TYPES);
 #undef LOOP_BODY
